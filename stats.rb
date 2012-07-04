@@ -4,24 +4,35 @@ require 'rubygems'
 require 'fastercsv'
 require 'active_support/core_ext/enumerable'
 require 'time'
+require 'date'
 Dir['models/*.rb'].each { |file| require file }
 
-if ARGV.length != 1
-  puts "Usage: #{__FILE__} <Your CSV file>"
+unless [1,3].include?(ARGV.length)
+  puts "Usage: #{__FILE__} [--from YYYY/MM/DD] <Your CSV file>"
   exit
+end
+
+if ARGV.length == 3
+  # Is this really necessary?! Ripped from http://stackoverflow.com/questions/800118/ruby-time-parse-gives-me-out-of-range-error
+  from_date = Date._strptime(ARGV[1], "%Y/%m/%d")
+  from_date = Time.utc(from_date[:year], from_date[:month], from_date[:day])
 end
 
 features, bugs, chores, dates = [], [], [], []
 
-FasterCSV.foreach(ARGV.first, :headers => true) do |row|
+FasterCSV.foreach(ARGV.last, :headers => true) do |row|
   unless (date = row["Accepted at"]).nil?
+    iteration_date = Time.parse(row["Iteration End"])
+    if from_date and iteration_date < from_date
+      next
+    end
     user = row["Owned By"].nil? ? "Unassigned" : row["Owned By"]
     case row['Story Type']
       when 'feature' then features << Feature.new(user, row["Estimate"].to_i, date, row["Iteration"])
       when 'bug' then bugs << Bug.new(user, date, row["Iteration"])
       when 'chore' then chores << Chore.new(user, date, row["Iteration"])
     end
-    dates << Time.parse(row["Iteration End"])
+    dates << iteration_date
   end
 end
 
