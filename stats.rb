@@ -2,7 +2,7 @@
 
 require 'rubygems'
 require 'fastercsv'
-require 'active_support/core_ext/enumerable'
+require 'active_support/core_ext'
 require 'time'
 require 'date'
 Dir['models/*.rb'].each { |file| require file }
@@ -15,7 +15,8 @@ end
 if ARGV.length == 3
   # Is this really necessary?! Ripped from http://stackoverflow.com/questions/800118/ruby-time-parse-gives-me-out-of-range-error
   from_date = Date._strptime(ARGV[1], "%Y/%m/%d")
-  from_date = Time.utc(from_date[:year], from_date[:month], from_date[:day])
+  from_date = Time.utc(from_date[:year], from_date[:mon], from_date[:mday])
+  # print "Parsed ", from_date, " from ", ARGV[1], "\n"
 end
 
 features, bugs, chores, dates = [], [], [], []
